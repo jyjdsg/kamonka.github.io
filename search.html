@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Search Results</title>
+  <script src="search-index.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 1em; }
+    .result { margin-bottom: 1em; }
+    .result-title { font-weight: bold; }
+    .result-snippet { color: #555; }
+  </style>
+</head>
+<body>
+  <h2>Search Results</h2>
+  <div id="results"></div>
+  <script>
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name) || '';
+    }
+
+    function highlight(text, keyword) {
+      if (!keyword) return text;
+      const regex = new RegExp(`(${keyword})`, "gi");
+      return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    const q = getQueryParam('q').trim();
+    const resultsDiv = document.getElementById('results');
+    let results = [];
+
+    if (window.SEARCH_INDEX && q) {
+      results = window.SEARCH_INDEX.filter(entry =>
+        entry.text.toLowerCase().includes(q.toLowerCase()) ||
+        entry.title.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+
+    if (results.length === 0) {
+      resultsDiv.textContent = q ? `No results for "${q}".` : "Please enter a search term.";
+    } else {
+      results.forEach(entry => {
+        const snippetStart = entry.text.toLowerCase().indexOf(q.toLowerCase());
+        let snippet = entry.text;
+        if (snippetStart !== -1) {
+          snippet = entry.text.substring(Math.max(0, snippetStart - 40), snippetStart + q.length + 40);
+        } else {
+          snippet = entry.text.substring(0, 80);
+        }
+        resultsDiv.innerHTML += `
+          <div class="result">
+            <a class="result-title" href="${entry.path}">${highlight(entry.title, q)}</a><br>
+            <span class="result-snippet">${highlight(snippet, q)}...</span>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>
